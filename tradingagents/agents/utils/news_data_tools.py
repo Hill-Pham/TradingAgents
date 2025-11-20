@@ -18,7 +18,8 @@ def get_news(
     Returns:
         str: A formatted string containing news data
     """
-    return route_to_vendor("get_news", ticker, start_date, end_date)
+
+    return route_to_vendor("get_news", _parseTicker(ticker), start_date, end_date)
 
 @tool
 def get_global_news(
@@ -52,7 +53,7 @@ def get_insider_sentiment(
     Returns:
         str: A report of insider sentiment data
     """
-    return route_to_vendor("get_insider_sentiment", ticker, curr_date)
+    return route_to_vendor("get_insider_sentiment", _parseTicker(ticker), curr_date)
 
 @tool
 def get_insider_transactions(
@@ -68,4 +69,9 @@ def get_insider_transactions(
     Returns:
         str: A report of insider transaction data
     """
-    return route_to_vendor("get_insider_transactions", ticker, curr_date)
+    return route_to_vendor("get_insider_transactions", _parseTicker(ticker), curr_date)
+
+def _parseTicker(ticker: str) -> str:
+    # Ticker have format BTC-USD for crypto assets, return BTC only
+    if "-" in ticker:
+        return "CRYPTO:" + ticker.split("-")[0]

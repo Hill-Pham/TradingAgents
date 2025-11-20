@@ -3,17 +3,139 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import yfinance as yf
 import os
+import requests
+import pandas as pd
+import time
 from .stockstats_utils import StockstatsUtils
 
 def get_YFin_data_online(
-    symbol: Annotated[str, "ticker symbol of the company"],
+    symbol: Annotated[str, "trading pair symbol like BTCUSDT, ETHUSDT, or stock symbols"],
     start_date: Annotated[str, "Start date in yyyy-mm-dd format"],
     end_date: Annotated[str, "End date in yyyy-mm-dd format"],
+    interval: str = "1d"
 ):
-
+    """
+    Get OHLCV data from Binance API or fallback to yfinance for traditional stocks.
+    
+    Args:
+        symbol: Trading pair (e.g., 'BTCUSDT', 'ETHUSDT') or stock symbol (e.g., 'AAPL')
+        start_date: Start date in yyyy-mm-dd format
+        end_date: End date in yyyy-mm-dd format  
+        interval: Kline interval (1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w, 1M)
+    
+    Returns:
+        CSV string with OHLCV data
+    """
     datetime.strptime(start_date, "%Y-%m-%d")
     datetime.strptime(end_date, "%Y-%m-%d")
+    
+    # First try Binance API for crypto pairs
+    if _is_crypto_symbol(symbol):
+        try:
+            return _get_binance_data(symbol, start_date, end_date, interval)
+        except Exception as e:
+            print(f"Binance API failed for {symbol}: {e}")
+            # Fall through to yfinance
+    
+    # Fallback to yfinance for traditional stocks
+    try:
+        return _get_yfinance_data(symbol, start_date, end_date)
+    except Exception as e:
+        return f"Error: Both Binance and yfinance failed for symbol '{symbol}': {e}"
 
+
+def _is_crypto_symbol(symbol: str) -> bool:
+    """Check if symbol looks like a crypto trading pair."""
+    symbol = symbol.upper()
+    # Common crypto pair patterns
+    crypto_suffixes = ['USDT', 'USDC', 'BTC', 'ETH', 'BNB', 'XRP']
+    return any(symbol.endswith(suffix) for suffix in crypto_suffixes)
+
+
+def _get_binance_data(symbol: str, start_date: str, end_date: str, interval: str = "1d") -> str:
+    """Get OHLCV data from Binance REST API."""
+    # Convert dates to timestamps (milliseconds)
+    start_timestamp = int(datetime.strptime(start_date, "%Y-%m-%d").timestamp() * 1000)
+    end_timestamp = int(datetime.strptime(end_date, "%Y-%m-%d").timestamp() * 1000)
+
+    # parse BTC-USDT to BTCUSDT
+    symbol = _parse_crypto_symnbol(symbol)
+    
+    # Binance API endpoint
+    url = "https://api.binance.com/api/v3/klines"
+    
+    all_data = []
+    current_start = start_timestamp
+    
+    # Binance limits to 1000 klines per request
+    while current_start < end_timestamp:
+        params = {
+            "symbol": symbol.upper(),
+            "interval": interval,
+            "startTime": current_start,
+            "endTime": end_timestamp,
+            "limit": 1000
+        }
+        
+        response = requests.get(url, params=params, timeout=30)
+        response.raise_for_status()
+        
+        data = response.json()
+        
+        if not data:
+            break
+            
+        all_data.extend(data)
+        
+        # Update start time to the last kline's close time + 1ms
+        current_start = data[-1][6] + 1
+        
+        # Add small delay to respect rate limits
+        time.sleep(0.1)
+    
+    if not all_data:
+        raise Exception(f"No data found for symbol '{symbol}' between {start_date} and {end_date}")
+    
+    # Convert to DataFrame
+    df = pd.DataFrame(all_data, columns=[
+        'timestamp', 'open', 'high', 'low', 'close', 'volume',
+        'close_time', 'quote_asset_volume', 'number_of_trades',
+        'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume', 'ignore'
+    ])
+    
+    # Convert timestamp to datetime
+    df['datetime'] = pd.to_datetime(df['timestamp'], unit='ms')
+    
+    # Select and rename columns to match standard OHLCV format
+    ohlcv_df = df[['datetime', 'open', 'high', 'low', 'close', 'volume']].copy()
+    ohlcv_df.columns = ['Date', 'Open', 'High', 'Low', 'Close', 'Volume']
+    
+    # Convert price columns to float
+    price_columns = ['Open', 'High', 'Low', 'Close']
+    for col in price_columns:
+        ohlcv_df[col] = ohlcv_df[col].astype(float).round(8)
+        
+    ohlcv_df['Volume'] = ohlcv_df['Volume'].astype(float).round(8)
+    
+    # Set date as index
+    ohlcv_df.set_index('Date', inplace=True)
+    
+    # Filter data to exact date range
+    start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+    end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+    ohlcv_df = ohlcv_df[(ohlcv_df.index >= start_dt) & (ohlcv_df.index <= end_dt)]
+    
+    # Add header information
+    header = f"# Binance data for {symbol.upper()} from {start_date} to {end_date}\n"
+    header += f"# Interval: {interval}\n"
+    header += f"# Total records: {len(ohlcv_df)}\n"
+    header += f"# Data retrieved on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+    
+    return header + ohlcv_df.to_csv()
+
+
+def _get_yfinance_data(symbol: str, start_date: str, end_date: str) -> str:
+    """Get data from yfinance as fallback for traditional stocks."""
     # Create ticker object
     ticker = yf.Ticker(symbol.upper())
 
@@ -22,9 +144,7 @@ def get_YFin_data_online(
 
     # Check if data is empty
     if data.empty:
-        return (
-            f"No data found for symbol '{symbol}' between {start_date} and {end_date}"
-        )
+        raise Exception(f"No data found for symbol '{symbol}' between {start_date} and {end_date}")
 
     # Remove timezone info from index for cleaner output
     if data.index.tz is not None:
@@ -191,7 +311,7 @@ def _get_stock_stats_bulk(
 ) -> dict:
     """
     Optimized bulk calculation of stock stats indicators.
-    Fetches data once and calculates indicator for all available dates.
+    Uses Binance data for crypto symbols, yfinance for stocks.
     Returns dict mapping date strings to indicator values.
     """
     from .config import get_config
@@ -215,39 +335,59 @@ def _get_stock_stats_bulk(
         except FileNotFoundError:
             raise Exception("Stockstats fail: Yahoo Finance data not fetched yet!")
     else:
-        # Online data fetching with caching
+        # Online data fetching with caching - try Binance first for crypto
         today_date = pd.Timestamp.today()
         curr_date_dt = pd.to_datetime(curr_date)
         
         end_date = today_date
-        start_date = today_date - pd.DateOffset(years=15)
+        start_date = today_date - pd.DateOffset(years=5)  # Reduced to 2 years for better performance
         start_date_str = start_date.strftime("%Y-%m-%d")
         end_date_str = end_date.strftime("%Y-%m-%d")
         
         os.makedirs(config["data_cache_dir"], exist_ok=True)
         
-        data_file = os.path.join(
-            config["data_cache_dir"],
-            f"{symbol}-YFin-data-{start_date_str}-{end_date_str}.csv",
-        )
-        
-        if os.path.exists(data_file):
-            data = pd.read_csv(data_file)
-            data["Date"] = pd.to_datetime(data["Date"])
-        else:
-            data = yf.download(
-                symbol,
-                start=start_date_str,
-                end=end_date_str,
-                multi_level_index=False,
-                progress=False,
-                auto_adjust=True,
+        # Try Binance data first for crypto symbols
+        if _is_crypto_symbol(symbol):
+            data_file = os.path.join(
+                config["data_cache_dir"],
+                f"{symbol}-Binance-data-{start_date_str}-{end_date_str}.csv",
             )
-            data = data.reset_index()
-            data.to_csv(data_file, index=False)
+            
+            if os.path.exists(data_file):
+                data = pd.read_csv(data_file, index_col=0, parse_dates=True)
+                data = data.reset_index()
+                data.rename(columns={'Date': 'Date'}, inplace=True)
+            else:
+                # Fetch from Binance and convert to stockstats format
+                try:
+                    binance_csv = _get_binance_data(symbol, start_date_str, end_date_str, "1d")
+                    # Parse the CSV content (skip header lines)
+                    lines = binance_csv.split('\n')
+                    csv_content = '\n'.join([line for line in lines if not line.startswith('#')])
+                    
+                    from io import StringIO
+                    data = pd.read_csv(StringIO(csv_content), index_col=0, parse_dates=True)
+                    data = data.reset_index()
+                    
+                    # Ensure proper column names for stockstats
+                    if 'Date' not in data.columns and data.index.name:
+                        data = data.reset_index()
+                    
+                    # Save to cache
+                    data.to_csv(data_file, index=False)
+                    print(f"Cached Binance data for {symbol}")
+                    
+                except Exception as e:
+                    print(f"Binance fetch failed for {symbol}: {e}, falling back to yfinance")
+                    # Fallback to yfinance for crypto (some exchanges might have it)
+                    data = _fetch_yfinance_data(symbol, start_date_str, end_date_str, config)
+        else:
+            # Use yfinance for traditional stocks
+            data = _fetch_yfinance_data(symbol, start_date_str, end_date_str, config)
         
         df = wrap(data)
-        df["Date"] = df["Date"].dt.strftime("%Y-%m-%d")
+        if 'Date' in df.columns:
+            df["Date"] = pd.to_datetime(df["Date"]).dt.strftime("%Y-%m-%d")
     
     # Calculate the indicator for all rows at once
     df[indicator]  # This triggers stockstats to calculate the indicator
@@ -255,7 +395,7 @@ def _get_stock_stats_bulk(
     # Create a dictionary mapping date strings to indicator values
     result_dict = {}
     for _, row in df.iterrows():
-        date_str = row["Date"]
+        date_str = row["Date"] if 'Date' in row else str(row.name)
         indicator_value = row[indicator]
         
         # Handle NaN/None values
@@ -265,6 +405,34 @@ def _get_stock_stats_bulk(
             result_dict[date_str] = str(indicator_value)
     
     return result_dict
+
+
+def _fetch_yfinance_data(symbol: str, start_date_str: str, end_date_str: str, config: dict) -> pd.DataFrame:
+    """Helper function to fetch data from yfinance with caching."""
+    import os
+    
+    data_file = os.path.join(
+        config["data_cache_dir"],
+        f"{symbol}-YFin-data-{start_date_str}-{end_date_str}.csv",
+    )
+    
+    if os.path.exists(data_file):
+        data = pd.read_csv(data_file)
+        data["Date"] = pd.to_datetime(data["Date"])
+    else:
+        data = yf.download(
+            symbol,
+            start=start_date_str,
+            end=end_date_str,
+            multi_level_index=False,
+            progress=False,
+            auto_adjust=True,
+        )
+        data = data.reset_index()
+        data.to_csv(data_file, index=False)
+        print(f"Cached yfinance data for {symbol}")
+    
+    return data
 
 
 def get_stockstats_indicator(
@@ -278,6 +446,25 @@ def get_stockstats_indicator(
     curr_date_dt = datetime.strptime(curr_date, "%Y-%m-%d")
     curr_date = curr_date_dt.strftime("%Y-%m-%d")
 
+    # For crypto symbols, try to use cached Binance data first
+    if _is_crypto_symbol(symbol):
+        try:
+            # Try to get the indicator from bulk calculation (uses Binance cache)
+            indicator_data = _get_stock_stats_bulk(symbol, indicator, curr_date)
+            
+            # Look up the specific date
+            if curr_date in indicator_data:
+                indicator_value = indicator_data[curr_date]
+                if indicator_value != "N/A":
+                    return str(indicator_value)
+            
+            # If not found in cache, fall through to StockstatsUtils
+            print(f"Date {curr_date} not found in Binance cache for {symbol}, using StockstatsUtils fallback")
+            
+        except Exception as e:
+            print(f"Error getting Binance indicator data for {symbol}: {e}, falling back to StockstatsUtils")
+
+    # Fallback to original StockstatsUtils for stocks or if Binance fails
     try:
         indicator_value = StockstatsUtils.get_stock_stats(
             symbol,
@@ -405,3 +592,7 @@ def get_insider_transactions(
         
     except Exception as e:
         return f"Error retrieving insider transactions for {ticker}: {str(e)}"
+    
+def _parse_crypto_symnbol(symbol: str) -> str:
+    """Convert symbols like BTC-USDT to BTCUSDT for Binance API."""
+    return symbol.replace("-", "").upper()    

@@ -81,7 +81,7 @@ def fetch_top_from_category(
 
         all_content_curr_subreddit = []
 
-        with open(os.path.join(base_path, category, data_file), "rb") as f:
+        with open(os.path.join(base_path, category, data_file), "rb", encoding="utf-8") as f:
             for i, line in enumerate(f):
                 # skip empty lines
                 if not line.strip():

@@ -79,8 +79,45 @@ class TradingAgentsGraph:
             self.deep_thinking_llm = ChatAnthropic(model=self.config["deep_think_llm"], base_url=self.config["backend_url"])
             self.quick_thinking_llm = ChatAnthropic(model=self.config["quick_think_llm"], base_url=self.config["backend_url"])
         elif self.config["llm_provider"].lower() == "google":
-            self.deep_thinking_llm = ChatGoogleGenerativeAI(model=self.config["deep_think_llm"])
-            self.quick_thinking_llm = ChatGoogleGenerativeAI(model=self.config["quick_think_llm"])
+            # Configure Google Gemini models with proper parameters
+            try:
+                # Configure with explicit parameters to avoid max_retries issue
+                google_config = {
+                    'model': self.config["deep_think_llm"],
+                    'temperature': 0.1,
+                    'convert_system_message_to_human': True,
+                    'client_options': {'api_endpoint': 'generativelanguage.googleapis.com'},
+                    'max_tokens': 8192  # Explicit token limit
+                }
+                
+                self.deep_thinking_llm = ChatGoogleGenerativeAI(**google_config)
+                
+                google_config['model'] = self.config["quick_think_llm"]
+                self.quick_thinking_llm = ChatGoogleGenerativeAI(**google_config)
+                
+                # Test the connection to make sure it works
+                test_response = self.quick_thinking_llm.invoke("Hello")
+                print(f"Google LLM connection successful: {len(str(test_response))} chars")
+                
+            except Exception as e:
+                print(f"Error initializing Google models: {e}")
+                # Fallback to minimal configuration
+                try:
+                    self.deep_thinking_llm = ChatGoogleGenerativeAI(
+                        model=self.config["deep_think_llm"],
+                        temperature=0.1
+                    )
+                    self.quick_thinking_llm = ChatGoogleGenerativeAI(
+                        model=self.config["quick_think_llm"],
+                        temperature=0.1
+                    )
+                    print("Using fallback Google LLM configuration")
+                except Exception as e2:
+                    print(f"Fallback also failed: {e2}")
+                    # Use OpenAI as final fallback
+                    print("Falling back to OpenAI models")
+                    self.deep_thinking_llm = ChatOpenAI(model="gpt-4o-mini", base_url="https://api.openai.com/v1")
+                    self.quick_thinking_llm = ChatOpenAI(model="gpt-4o-mini", base_url="https://api.openai.com/v1")
         else:
             raise ValueError(f"Unsupported LLM provider: {self.config['llm_provider']}")
         
@@ -230,7 +267,7 @@ class TradingAgentsGraph:
 
         with open(
             f"eval_results/{self.ticker}/TradingAgentsStrategy_logs/full_states_log_{trade_date}.json",
-            "w",
+            "w",encoding="utf-8"
         ) as f:
             json.dump(self.log_states_dict, f, indent=4)
 

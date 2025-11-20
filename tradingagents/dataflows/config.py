@@ -12,6 +12,9 @@ def initialize_config():
     if _config is None:
         _config = default_config.DEFAULT_CONFIG.copy()
         DATA_DIR = _config["data_dir"]
+        print("config =", _config)
+        print("DATA_DIR =", DATA_DIR)
+
 
 
 def set_config(config: Dict):

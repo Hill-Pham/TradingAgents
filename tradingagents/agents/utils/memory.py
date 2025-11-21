@@ -1,25 +1,45 @@
 import chromadb
 from chromadb.config import Settings
 from openai import OpenAI
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 
 class FinancialSituationMemory:
     def __init__(self, name, config):
-        if config["backend_url"] == "http://localhost:11434/v1":
-            self.embedding = "nomic-embed-text"
+        self.provider = config.get("llm_provider", "openai").lower()
+        
+        # Initialize embedding model based on provider
+        if self.provider == "google":
+            # Google Gemini embeddings via langchain
+            self.embedding_model = "models/text-embedding-004"
+            self.embeddings = GoogleGenerativeAIEmbeddings(model=self.embedding_model)
+            self.client = None  # Not using OpenAI client for Google
+        elif self.provider == "ollama":
+            # Ollama local embeddings
+            self.embedding_model = "nomic-embed-text"
+            self.client = OpenAI(base_url=config["backend_url"])
+            self.embeddings = None  # Using OpenAI-compatible API
         else:
-            self.embedding = "text-embedding-3-small"
-        self.client = OpenAI(base_url=config["backend_url"])
+            # OpenAI or OpenAI-compatible embeddings (default)
+            self.embedding_model = "text-embedding-3-small"
+            self.client = OpenAI(base_url=config["backend_url"])
+            self.embeddings = None  # Using OpenAI-compatible API
+        
         self.chroma_client = chromadb.Client(Settings(allow_reset=True))
         self.situation_collection = self.chroma_client.create_collection(name=name)
 
     def get_embedding(self, text):
-        """Get OpenAI embedding for a text"""
+        """Get embedding for a text based on the configured provider"""
         
-        response = self.client.embeddings.create(
-            model=self.embedding, input=text
-        )
-        return response.data[0].embedding
+        if self.provider == "google":
+            # Use langchain Google Gemini embeddings
+            return self.embeddings.embed_query(text)
+        else:
+            # Use OpenAI or OpenAI-compatible embeddings
+            response = self.client.embeddings.create(
+                model=self.embedding_model, input=text
+            )
+            return response.data[0].embedding
 
     def add_situations(self, situations_and_advice):
         """Add financial situations and their corresponding advice. Parameter is a list of tuples (situation, rec)"""
@@ -45,7 +65,7 @@ class FinancialSituationMemory:
         )
 
     def get_memories(self, current_situation, n_matches=1):
-        """Find matching recommendations using OpenAI embeddings"""
+        """Find matching recommendations using embeddings from configured provider (OpenAI or Google Gemini)"""
         query_embedding = self.get_embedding(current_situation)
 
         results = self.situation_collection.query(

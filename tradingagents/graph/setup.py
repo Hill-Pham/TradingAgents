@@ -1,7 +1,7 @@
 # TradingAgents/graph/setup.py
 
-from typing import Dict, Any
-from langchain_openai import ChatOpenAI
+from typing import Dict, Any, Union
+from langchain_core.language_models import BaseChatModel
 from langgraph.graph import END, StateGraph, START
 from langgraph.prebuilt import ToolNode
 
@@ -12,12 +12,20 @@ from .conditional_logic import ConditionalLogic
 
 
 class GraphSetup:
-    """Handles the setup and configuration of the agent graph."""
+    """Handles the setup and configuration of the agent graph.
+    
+    Supports multiple LLM providers including:
+    - OpenAI (ChatOpenAI)
+    - Google Gemini (ChatGoogleGenerativeAI)
+    - Anthropic Claude (ChatAnthropic)
+    - Ollama (ChatOpenAI with custom base_url)
+    - OpenRouter (ChatOpenAI with custom base_url)
+    """
 
     def __init__(
         self,
-        quick_thinking_llm: ChatOpenAI,
-        deep_thinking_llm: ChatOpenAI,
+        quick_thinking_llm: BaseChatModel,
+        deep_thinking_llm: BaseChatModel,
         tool_nodes: Dict[str, ToolNode],
         bull_memory,
         bear_memory,
@@ -26,7 +34,19 @@ class GraphSetup:
         risk_manager_memory,
         conditional_logic: ConditionalLogic,
     ):
-        """Initialize with required components."""
+        """Initialize with required components.
+        
+        Args:
+            quick_thinking_llm: LLM for quick analysis tasks (any LangChain chat model)
+            deep_thinking_llm: LLM for complex reasoning tasks (any LangChain chat model)
+            tool_nodes: Dictionary of tool nodes for different analyst types
+            bull_memory: Memory for bull researcher
+            bear_memory: Memory for bear researcher
+            trader_memory: Memory for trader
+            invest_judge_memory: Memory for investment judge
+            risk_manager_memory: Memory for risk manager
+            conditional_logic: Conditional logic handler
+        """
         self.quick_thinking_llm = quick_thinking_llm
         self.deep_thinking_llm = deep_thinking_llm
         self.tool_nodes = tool_nodes

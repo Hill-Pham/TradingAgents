@@ -38,6 +38,26 @@ app = typer.Typer(
 )
 
 
+def extract_content_string(content):
+    """Extract string content from various message formats."""
+    if isinstance(content, str):
+        return content
+    elif isinstance(content, list):
+        # Handle Anthropic's list format
+        text_parts = []
+        for item in content:
+            if isinstance(item, dict):
+                if item.get('type') == 'text':
+                    text_parts.append(item.get('text', ''))
+                elif item.get('type') == 'tool_use':
+                    text_parts.append(f"[Tool: {item.get('name', 'unknown')}]")
+            else:
+                text_parts.append(str(item))
+        return ' '.join(text_parts)
+    else:
+        return str(content)
+
+
 # Create a deque to store recent messages with a maximum length
 class MessageBuffer:
     def __init__(self, max_length=100):
@@ -90,7 +110,7 @@ class MessageBuffer:
 
     def update_report_section(self, section_name, content):
         if section_name in self.report_sections:
-            self.report_sections[section_name] = content
+            self.report_sections[section_name] = extract_content_string(content)
             self._update_current_report()
 
     def _update_current_report(self):
@@ -716,24 +736,7 @@ def update_research_team_status(status):
     for agent in research_team:
         message_buffer.update_agent_status(agent, status)
 
-def extract_content_string(content):
-    """Extract string content from various message formats."""
-    if isinstance(content, str):
-        return content
-    elif isinstance(content, list):
-        # Handle Anthropic's list format
-        text_parts = []
-        for item in content:
-            if isinstance(item, dict):
-                if item.get('type') == 'text':
-                    text_parts.append(item.get('text', ''))
-                elif item.get('type') == 'tool_use':
-                    text_parts.append(f"[Tool: {item.get('name', 'unknown')}]")
-            else:
-                text_parts.append(str(item))
-        return ' '.join(text_parts)
-    else:
-        return str(content)
+
 
 def run_analysis():
     # First get all user selections

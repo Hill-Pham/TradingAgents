@@ -104,6 +104,7 @@ VENDOR_METHODS = {
     },
     "get_global_news": {
         "openai": get_global_news_openai,
+        "google": get_global_news_openai,
         "local": get_reddit_global_news
     },
     "get_insider_sentiment": {

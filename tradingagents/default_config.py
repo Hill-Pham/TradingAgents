@@ -9,10 +9,30 @@ DEFAULT_CONFIG = {
         "dataflows/data_cache",
     ),
     # LLM settings
-    "llm_provider": "openai",
-    "deep_think_llm": "o4-mini",
-    "quick_think_llm": "gpt-4o-mini",
-    "backend_url": "https://api.openai.com/v1",
+    "llm_provider": "openai",  # Options: "openai", "google" (Gemini), "anthropic", "ollama", "openrouter"
+    "deep_think_llm": "o4-mini",  # Model for complex reasoning tasks
+    "quick_think_llm": "gpt-4o-mini",  # Model for quick analysis tasks
+    "backend_url": "https://api.openai.com/v1",  # API endpoint (varies by provider)
+    # 
+    # Example configurations:
+    # OpenAI:
+    #   llm_provider: "openai"
+    #   deep_think_llm: "o4-mini" or "o1" or "o3-mini"
+    #   quick_think_llm: "gpt-4o-mini" or "gpt-4o"
+    #   backend_url: "https://api.openai.com/v1"
+    #
+    # Google Gemini:
+    #   llm_provider: "google"
+    #   deep_think_llm: "gemini-2.5-pro-preview-06-05" or "gemini-2.5-flash"
+    #   quick_think_llm: "gemini-2.0-flash" or "gemini-2.5-flash"
+    #   backend_url: "https://generativelanguage.googleapis.com/v1"
+    #
+    # Anthropic:
+    #   llm_provider: "anthropic"
+    #   deep_think_llm: "claude-sonnet-4-0" or "claude-opus-4-0"
+    #   quick_think_llm: "claude-3-5-sonnet-latest"
+    #   backend_url: "https://api.anthropic.com/"
+    #
     # Debate and discussion settings
     "max_debate_rounds": 1,
     "max_risk_discuss_rounds": 1,
@@ -31,3 +51,4 @@ DEFAULT_CONFIG = {
         # Example: "get_news": "openai",               # Override category default
     },
 }
+

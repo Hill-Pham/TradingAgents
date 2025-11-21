@@ -71,55 +71,60 @@ class TradingAgentsGraph:
             exist_ok=True,
         )
 
-        # Initialize LLMs
-        if self.config["llm_provider"].lower() == "openai" or self.config["llm_provider"] == "ollama" or self.config["llm_provider"] == "openrouter":
-            self.deep_thinking_llm = ChatOpenAI(model=self.config["deep_think_llm"], base_url=self.config["backend_url"])
-            self.quick_thinking_llm = ChatOpenAI(model=self.config["quick_think_llm"], base_url=self.config["backend_url"])
-        elif self.config["llm_provider"].lower() == "anthropic":
-            self.deep_thinking_llm = ChatAnthropic(model=self.config["deep_think_llm"], base_url=self.config["backend_url"])
-            self.quick_thinking_llm = ChatAnthropic(model=self.config["quick_think_llm"], base_url=self.config["backend_url"])
-        elif self.config["llm_provider"].lower() == "google":
-            # Configure Google Gemini models with proper parameters
+        # Initialize LLMs based on provider
+        provider = self.config["llm_provider"].lower()
+        
+        if provider in ["openai", "ollama", "openrouter"]:
+            # OpenAI-compatible providers (OpenAI, Ollama, OpenRouter)
+            self.deep_thinking_llm = ChatOpenAI(
+                model=self.config["deep_think_llm"], 
+                base_url=self.config["backend_url"]
+            )
+            self.quick_thinking_llm = ChatOpenAI(
+                model=self.config["quick_think_llm"], 
+                base_url=self.config["backend_url"]
+            )
+            
+        elif provider == "anthropic":
+            # Anthropic Claude models
+            self.deep_thinking_llm = ChatAnthropic(
+                model=self.config["deep_think_llm"], 
+                base_url=self.config["backend_url"]
+            )
+            self.quick_thinking_llm = ChatAnthropic(
+                model=self.config["quick_think_llm"], 
+                base_url=self.config["backend_url"]
+            )
+            
+        elif provider == "google":
+            # Google Gemini models
+            # Note: ChatGoogleGenerativeAI uses GOOGLE_API_KEY env var automatically
+            # and does NOT use backend_url parameter
             try:
-                # Configure with explicit parameters to avoid max_retries issue
-                google_config = {
-                    'model': self.config["deep_think_llm"],
-                    'temperature': 0.1,
-                    'convert_system_message_to_human': True,
-                    'client_options': {'api_endpoint': 'generativelanguage.googleapis.com'},
-                    'max_tokens': 8192  # Explicit token limit
-                }
-                
-                self.deep_thinking_llm = ChatGoogleGenerativeAI(**google_config)
-                
-                google_config['model'] = self.config["quick_think_llm"]
-                self.quick_thinking_llm = ChatGoogleGenerativeAI(**google_config)
-                
-                # Test the connection to make sure it works
-                test_response = self.quick_thinking_llm.invoke("Hello")
-                print(f"Google LLM connection successful: {len(str(test_response))} chars")
+                self.deep_thinking_llm = ChatGoogleGenerativeAI(
+                    model=self.config["deep_think_llm"],
+                    temperature=0.1,
+                    convert_system_message_to_human=True
+                )
+                self.quick_thinking_llm = ChatGoogleGenerativeAI(
+                    model=self.config["quick_think_llm"],
+                    temperature=0.1,
+                    convert_system_message_to_human=True
+                )
+                print(f"✓ Initialized Google Gemini models: {self.config['quick_think_llm']} (quick) & {self.config['deep_think_llm']} (deep)")
                 
             except Exception as e:
-                print(f"Error initializing Google models: {e}")
-                # Fallback to minimal configuration
-                try:
-                    self.deep_thinking_llm = ChatGoogleGenerativeAI(
-                        model=self.config["deep_think_llm"],
-                        temperature=0.1
-                    )
-                    self.quick_thinking_llm = ChatGoogleGenerativeAI(
-                        model=self.config["quick_think_llm"],
-                        temperature=0.1
-                    )
-                    print("Using fallback Google LLM configuration")
-                except Exception as e2:
-                    print(f"Fallback also failed: {e2}")
-                    # Use OpenAI as final fallback
-                    print("Falling back to OpenAI models")
-                    self.deep_thinking_llm = ChatOpenAI(model="gpt-4o-mini", base_url="https://api.openai.com/v1")
-                    self.quick_thinking_llm = ChatOpenAI(model="gpt-4o-mini", base_url="https://api.openai.com/v1")
+                print(f"✗ Error initializing Google Gemini models: {e}")
+                raise ValueError(
+                    f"Failed to initialize Google Gemini models. "
+                    f"Please check your GOOGLE_API_KEY environment variable and model names. "
+                    f"Error: {e}"
+                )
         else:
-            raise ValueError(f"Unsupported LLM provider: {self.config['llm_provider']}")
+            raise ValueError(
+                f"Unsupported LLM provider: '{self.config['llm_provider']}'. "
+                f"Supported providers: openai, anthropic, google, ollama, openrouter"
+            )
         
         # Initialize memories
         self.bull_memory = FinancialSituationMemory("bull_memory", self.config)

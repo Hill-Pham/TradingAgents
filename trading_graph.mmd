@@ -1,0 +1,59 @@
+graph TD
+    Start([START])
+    Market[Market Analyst]
+    Tools_Market{{Use Tools}}
+    Clear_Market[Clear Messages]
+    Start --> Market
+    Market -->|Need Tools?| Tools_Market
+    Market -->|Done| Clear_Market
+    Tools_Market --> Market
+    Social[Social Analyst]
+    Tools_Social{{Use Tools}}
+    Clear_Social[Clear Messages]
+    Clear_Market --> Social
+    Social -->|Need Tools?| Tools_Social
+    Social -->|Done| Clear_Social
+    Tools_Social --> Social
+    News[News Analyst]
+    Tools_News{{Use Tools}}
+    Clear_News[Clear Messages]
+    Clear_Social --> News
+    News -->|Need Tools?| Tools_News
+    News -->|Done| Clear_News
+    Tools_News --> News
+    Clear_News --> Bull
+    Bull[Bull Researcher]
+    Bear[Bear Researcher]
+    Manager[Research Manager]
+    Bull -->|Counter?| Bear
+    Bull -->|Consensus| Manager
+    Bear -->|Counter?| Bull
+    Bear -->|Consensus| Manager
+    Manager --> Trader
+    Trader[Trader]
+    Trader --> Risky
+    Risky[Risky Analyst]
+    Safe[Safe Analyst]
+    Neutral[Neutral Analyst]
+    Judge[Risk Judge]
+    Risky -->|Need Safe View?| Safe
+    Risky -->|Ready| Judge
+    Safe -->|Need Neutral?| Neutral
+    Safe -->|Ready| Judge
+    Neutral -->|Reconsider?| Risky
+    Neutral -->|Ready| Judge
+    Judge --> End([END])
+
+    style Start fill:#90EE90
+    style End fill:#FFB6C1
+    style Bull fill:#FFE4B5
+    style Bear fill:#FFE4B5
+    style Manager fill:#DDA0DD
+    style Trader fill:#87CEEB
+    style Risky fill:#FFA07A
+    style Safe fill:#98FB98
+    style Neutral fill:#F0E68C
+    style Judge fill:#DDA0DD
+style Market fill:#e1f5ff
+style Social fill:#fff3e0
+style News fill:#f3e5f5

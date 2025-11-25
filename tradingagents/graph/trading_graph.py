@@ -188,15 +188,15 @@ class TradingAgentsGraph:
                     get_insider_transactions,
                 ]
             ),
-            "fundamentals": ToolNode(
-                [
-                    # Fundamental analysis tools
-                    get_fundamentals,
-                    get_balance_sheet,
-                    get_cashflow,
-                    get_income_statement,
-                ]
-            ),
+            # "fundamentals": ToolNode(
+            #     [
+            #         # Fundamental analysis tools
+            #         get_fundamentals,
+            #         get_balance_sheet,
+            #         get_cashflow,
+            #         get_income_statement,
+            #     ]
+            # ),
         }
 
     def propagate(self, company_name, trade_date):

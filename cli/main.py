@@ -70,7 +70,7 @@ class MessageBuffer:
             "Market Analyst": "pending",
             "Social Analyst": "pending",
             "News Analyst": "pending",
-            "Fundamentals Analyst": "pending",
+            # "Fundamentals Analyst": "pending",
             # Research Team
             "Bull Researcher": "pending",
             "Bear Researcher": "pending",
@@ -243,7 +243,7 @@ def update_display(layout, spinner_text=None):
             "Market Analyst",
             "Social Analyst",
             "News Analyst",
-            "Fundamentals Analyst",
+            # "Fundamentals Analyst",
         ],
         "Research Team": ["Bull Researcher", "Bear Researcher", "Research Manager"],
         "Trading Team": ["Trader"],
@@ -581,15 +581,15 @@ def display_complete_report(final_state):
         )
 
     # Fundamentals Analyst Report
-    if final_state.get("fundamentals_report"):
-        analyst_reports.append(
-            Panel(
-                Markdown(final_state["fundamentals_report"]),
-                title="Fundamentals Analyst",
-                border_style="blue",
-                padding=(1, 2),
-            )
-        )
+    # if final_state.get("fundamentals_report"):
+    #     analyst_reports.append(
+    #         Panel(
+    #             Markdown(final_state["fundamentals_report"]),
+    #             title="Fundamentals Analyst",
+    #             border_style="blue",
+    #             padding=(1, 2),
+    #         )
+    #     )
 
     if analyst_reports:
         console.print(
@@ -907,20 +907,20 @@ def run_analysis():
                     )
                     message_buffer.update_agent_status("News Analyst", "completed")
                     # Set next analyst to in_progress
-                    if "fundamentals" in selections["analysts"]:
-                        message_buffer.update_agent_status(
-                            "Fundamentals Analyst", "in_progress"
-                        )
+                    # if "fundamentals" in selections["analysts"]:
+                    #     message_buffer.update_agent_status(
+                    #         "Fundamentals Analyst", "in_progress"
+                    #     )
 
-                if "fundamentals_report" in chunk and chunk["fundamentals_report"]:
-                    message_buffer.update_report_section(
-                        "fundamentals_report", chunk["fundamentals_report"]
-                    )
-                    message_buffer.update_agent_status(
-                        "Fundamentals Analyst", "completed"
-                    )
-                    # Set all research team members to in_progress
-                    update_research_team_status("in_progress")
+                # if "fundamentals_report" in chunk and chunk["fundamentals_report"]:
+                #     message_buffer.update_report_section(
+                #         "fundamentals_report", chunk["fundamentals_report"]
+                #     )
+                #     message_buffer.update_agent_status(
+                #         "Fundamentals Analyst", "completed"
+                #     )
+                #     # Set all research team members to in_progress
+                #     update_research_team_status("in_progress")
 
                 # Research Team - Handle Investment Debate State
                 if (

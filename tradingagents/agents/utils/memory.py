@@ -2,6 +2,7 @@ import chromadb
 from chromadb.config import Settings
 from openai import OpenAI
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
+import os
 
 
 class FinancialSituationMemory:

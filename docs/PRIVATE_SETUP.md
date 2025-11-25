@@ -24,7 +24,7 @@ This guide explains how to set up TradingAgents for **completely private and loc
 
 ### Software Requirements
 
-- Python 3.10+ 
+- Python 3.13+ (required by TradingAgents)
 - [Ollama](https://ollama.ai/) installed and running
 - Git
 

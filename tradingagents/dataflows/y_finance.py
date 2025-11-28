@@ -32,6 +32,7 @@ def get_YFin_data_online(
     # First try Binance API for crypto pairs
     if _is_crypto_symbol(symbol):
         try:
+            print(f"Trying Binance API for symbol {symbol}...")
             return _get_binance_data(symbol, start_date, end_date, interval)
         except Exception as e:
             print(f"Binance API failed for {symbol}: {e}")
@@ -52,14 +53,16 @@ def _is_crypto_symbol(symbol: str) -> bool:
     return any(symbol.endswith(suffix) for suffix in crypto_suffixes)
 
 
-def _get_binance_data(symbol: str, start_date: str, end_date: str, interval: str = "1d") -> str:
+def _get_binance_data(symbolRaw: str, start_date: str, end_date: str, interval: str = "1d") -> str:
     """Get OHLCV data from Binance REST API."""
     # Convert dates to timestamps (milliseconds)
     start_timestamp = int(datetime.strptime(start_date, "%Y-%m-%d").timestamp() * 1000)
     end_timestamp = int(datetime.strptime(end_date, "%Y-%m-%d").timestamp() * 1000)
 
     # parse BTC-USDT to BTCUSDT
-    symbol = _parse_crypto_symnbol(symbol)
+    symbol = _parse_crypto_symnbol(symbolRaw)
+    
+    print(f"Fetching Binance data for {symbol} from {start_date} to {end_date}...")
     
     # Binance API endpoint
     url = "https://api.binance.com/api/v3/klines"

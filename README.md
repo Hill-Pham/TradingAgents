@@ -223,3 +223,25 @@ Please reference our work if you find *TradingAgents* provides you with some hel
       url={https://arxiv.org/abs/2412.20138}, 
 }
 ```
+Graph Overview:
+Your workflow has 4 main phases:
+
+📊 Analysis Phase (Sequential)
+
+Market Analyst → Social Analyst → News Analyst
+Each can use tools if needed
+🔬 Research Phase (Debate)
+
+Bull Researcher ⟷ Bear Researcher (debate back and forth)
+Research Manager (synthesizes consensus)
+💼 Trading Phase
+
+Trader (creates investment plan)
+⚖️ Risk Management Phase (Debate)
+
+Risky → Safe → Neutral Analysts (circular debate)
+Risk Judge (final decision)
+The graph shows all conditional branches and loops! 🔄
+
+Run and write log to file:
+- python main.py > output.log 2>&1  

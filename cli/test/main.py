@@ -317,6 +317,18 @@ def _get_binance_data_1(symbol: str, start_date: str, end_date: str, interval: s
 # Using the special variable 
 # __name__
 if __name__=="__main__":
+    from tradingagents.dataflows.reddit_utils import fetch_top_from_category
+    
+    # print("=== Testing fetch_latest_news ===")
+    # news = fetch_top_from_category(max_chars=2000, symbol="XRPUSDT")
+    
+    # if news:
+    #     print(f"\n✓ Successfully fetched {len(news)} characters of news\n")
+    #     print(news)
+    # else:
+    #     print("\n✗ No news data fetched\n")
+
+
     # Test Binance connection first
     print("=== Testing Binance API ===")
     if test_binance_connection():

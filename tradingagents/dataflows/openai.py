@@ -34,7 +34,7 @@ def _get_response_with_search(prompt, config, search_config=None):
         }
     
     if llm_provider == "google":
-        console.print("Using Google/Gemini")
+        print("Using Google/Gemini with Google Search")
         if not GEMINI_AVAILABLE:
             raise ImportError(
                 "google-generativeai package is not installed. "
@@ -51,32 +51,64 @@ def _get_response_with_search(prompt, config, search_config=None):
         
         genai.configure(api_key=api_key)
         
-        # Create model with Google Search grounding
+        # Perform Google Search using googlesearch-python library
+        # This provides real search results to enhance the Gemini response
+        try:
+            from googlesearch import search
+            
+            # Extract key search terms from prompt (use first 100 chars)
+            search_query = prompt[:100] if len(prompt) > 100 else prompt
+            
+            # Perform Google search (top 5 results)
+            search_results = []
+            try:
+                print(f"[DEBUG]-_get_response_with_search- Searching Google for: {search_query[:50]}...")
+                for url in search(search_query, num_results=5):
+                    search_results.append(f"- {url}")
+                    
+                print(f"[DEBUG]-_get_response_with_search- Found {len(search_results)} search results")
+            except Exception as search_error:
+                print(f"[WARNING] Google search failed: {search_error}")
+            
+            # Enhance prompt with search results
+            if search_results:
+                enhanced_prompt = (
+                    f"{prompt}\n\n"
+                    f"Here are relevant search results from Google:\n"
+                    + "\n".join(search_results) + "\n\n"
+                    f"Please provide a comprehensive answer based on the above information."
+                )
+            else:
+                enhanced_prompt = prompt
+                
+        except ImportError:
+            print("[WARNING] googlesearch-python not installed. Using prompt without search enhancement.")
+            enhanced_prompt = prompt
+        
+        # Create model without search grounding (SDK limitation)
         model = genai.GenerativeModel(
-            model_name=config["quick_think_llm"],
-            tools=[{"google_search": {}}]
+            model_name=config["quick_think_llm"]
         )
         
-        # Generate response with tool configuration
+        print(f"[DEBUG]-_get_response_with_search- Model: {config['quick_think_llm']}")
+        print(f"[DEBUG]-_get_response_with_search- Enhanced Prompt:\n{enhanced_prompt[:200]}...")
+        
+        # Generate response
         response = model.generate_content(
-            prompt,
+            enhanced_prompt,
             generation_config=genai.GenerationConfig(
-                temperature=1.0,
+                temperature=0.1,
                 top_p=1.0,
                 max_output_tokens=4096,
-            ),
-            tools=[{"google_search": {}}],
-            tool_config={
-                "function_calling_config": {
-                    "mode": "AUTO"  # Let model decide when to use Google Search
-                }
-            }
+            )
         )
+
+        print(f"[DEBUG]-_get_response_with_search- Response generated successfully")
         
         return response.text
     
     else:  # Default to OpenAI
-        console.print("Using OpenAI")
+        print("Using OpenAI")
         client = OpenAI(base_url=config["backend_url"])
         
         # Use search_config for OpenAI web search

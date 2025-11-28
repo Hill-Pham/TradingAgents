@@ -48,7 +48,7 @@ class TradingAgentsGraph:
 
     def __init__(
         self,
-        selected_analysts=["market", "social", "news", "fundamentals"],
+        selected_analysts=["market", "social", "news"],
         debug=False,
         config: Dict[str, Any] = None,
     ):
@@ -111,10 +111,10 @@ class TradingAgentsGraph:
                     temperature=0.1,
                     convert_system_message_to_human=True
                 )
-                print(f"✓ Initialized Google Gemini models: {self.config['quick_think_llm']} (quick) & {self.config['deep_think_llm']} (deep)")
+                print(f"Initialized Google Gemini models: {self.config['quick_think_llm']} (quick) & {self.config['deep_think_llm']} (deep)")
                 
             except Exception as e:
-                print(f"✗ Error initializing Google Gemini models: {e}")
+                print(f"Error initializing Google Gemini models: {e}")
                 raise ValueError(
                     f"Failed to initialize Google Gemini models. "
                     f"Please check your GOOGLE_API_KEY environment variable and model names. "
@@ -183,7 +183,7 @@ class TradingAgentsGraph:
                 [
                     # News and insider information
                     get_news,
-                    get_global_news,
+                    # get_global_news,
                     get_insider_sentiment,
                     get_insider_transactions,
                 ]

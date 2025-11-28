@@ -16,6 +16,7 @@ from .alpha_vantage import (
     get_news as get_alpha_vantage_news
 )
 from .alpha_vantage_common import AlphaVantageRateLimitError
+from .news_feed import fetch_latest_news
 
 # Configuration and routing logic
 from .config import get_config
@@ -23,7 +24,7 @@ from .config import get_config
 # Tools organized by category
 TOOLS_CATEGORIES = {
     "core_stock_apis": {
-        "description": "OHLCV stock price data",
+        "description": "OHLCV coin price data",
         "tools": [
             "get_stock_data"
         ]
@@ -105,6 +106,7 @@ VENDOR_METHODS = {
     "get_global_news": {
         "openai": get_global_news_openai,
         "google": get_global_news_openai,
+        "alpha_vantage": get_global_news_openai,
         "local": get_reddit_global_news
     },
     "get_insider_sentiment": {

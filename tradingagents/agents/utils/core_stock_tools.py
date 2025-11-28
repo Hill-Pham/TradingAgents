@@ -5,7 +5,7 @@ from tradingagents.dataflows.interface import route_to_vendor
 
 @tool
 def get_stock_data(
-    symbol: Annotated[str, "ticker symbol of the company"],
+    symbol: Annotated[str, "ticker symbol of the coin"],
     start_date: Annotated[str, "Start date in yyyy-mm-dd format"],
     end_date: Annotated[str, "End date in yyyy-mm-dd format"],
 ) -> str:
@@ -13,7 +13,7 @@ def get_stock_data(
     Retrieve stock price data (OHLCV) for a given ticker symbol.
     Uses the configured core_stock_apis vendor.
     Args:
-        symbol (str): Ticker symbol of the company, e.g. AAPL, TSM
+        symbol (str): Ticker symbol of the coin, e.g. BTC, ETH
         start_date (str): Start date in yyyy-mm-dd format
         end_date (str): End date in yyyy-mm-dd format
     Returns:

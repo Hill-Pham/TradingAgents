@@ -217,6 +217,8 @@ def fetch_latest_news(max_chars: int = 4000, coin: Optional[str] = None) -> str:
                 "DOT": ["DOT", "POLKADOT"],
                 "AVAX": ["AVAX", "AVALANCHE"],
                 "LINK": ["LINK", "CHAINLINK"],
+                "SUI": ["SUI", "SUI"],
+                "ENA": ["ENA", "ETHENA"],
             }
             
             # Get keywords for known coins, otherwise use the coin symbol itself

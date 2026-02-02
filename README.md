@@ -105,11 +105,18 @@ Create a virtual environment in any of your favorite environment managers:
 ```bash
 conda create -n tradingagents python=3.13
 conda activate tradingagents
+
+or 
+ .\.venv\Scripts\activate 
 ```
 
 Install dependencies:
 ```bash
 pip install -r requirements.txt
+```
+Run
+```bash
+python -m cli.main   
 ```
 
 ### Required APIs

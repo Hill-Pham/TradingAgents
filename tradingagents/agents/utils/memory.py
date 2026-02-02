@@ -1,7 +1,7 @@
 import chromadb
 from chromadb.config import Settings
 from openai import OpenAI
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+import google.generativeai as genai
 import os
 
 
@@ -11,9 +11,12 @@ class FinancialSituationMemory:
         
         # Initialize embedding model based on provider
         if self.provider == "google":
-            # Google Gemini embeddings via langchain
+            # Google Gemini embeddings using official API (v1)
+            api_key = os.environ.get("GOOGLE_API_KEY")
+            if api_key:
+                genai.configure(api_key=api_key)
             self.embedding_model = "models/text-embedding-004"
-            self.embeddings = GoogleGenerativeAIEmbeddings(model=self.embedding_model)
+            self.embeddings = None  # Using native genai SDK
             self.client = None  # Not using OpenAI client for Google
         elif self.provider == "ollama":
             # Ollama local embeddings
@@ -31,10 +34,14 @@ class FinancialSituationMemory:
 
     def get_embedding(self, text):
         """Get embedding for a text based on the configured provider"""
-        
         if self.provider == "google":
-            # Use langchain Google Gemini embeddings
-            return self.embeddings.embed_query(text)
+            # Use official Google Generative AI SDK with v1 API
+            result = genai.embed_content(
+                model=self.embedding_model,
+                content=text,
+                task_type="retrieval_document"
+            )
+            return result['embedding']
         else:
             # Use OpenAI or OpenAI-compatible embeddings
             response = self.client.embeddings.create(

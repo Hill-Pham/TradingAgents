@@ -49,7 +49,7 @@ def _is_crypto_symbol(symbol: str) -> bool:
     """Check if symbol looks like a crypto trading pair."""
     symbol = symbol.upper()
     # Common crypto pair patterns
-    crypto_suffixes = ['USDT', 'USDC', 'BTC', 'ETH', 'BNB', 'XRP']
+    crypto_suffixes = ['USDT', 'USDC', 'BTC', 'ETH', 'BNB', 'XRP', 'LTC', 'ADA', 'SOL', 'DOGE', 'SUI', 'ENA']
     return any(symbol.endswith(suffix) for suffix in crypto_suffixes)
 
 

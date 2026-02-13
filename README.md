@@ -43,7 +43,7 @@
 
 <div align="center">
 
-🚀 [TradingAgents](#tradingagents-framework) | ⚡ [Installation & CLI](#installation-and-cli) | 🎬 [Demo](https://www.youtube.com/watch?v=90gr5lwjIho) | 📦 [Package Usage](#tradingagents-package) | 🤝 [Contributing](#contributing) | 📄 [Citation](#citation)
+🚀 [TradingAgents](#tradingagents-framework) | ⚡ [Installation & CLI](#installation-and-cli) | 🔒 [Private Setup](./docs/PRIVATE_SETUP.md) | 🎬 [Demo](https://www.youtube.com/watch?v=90gr5lwjIho) | 📦 [Package Usage](#tradingagents-package) | 🤝 [Contributing](#contributing) | 📄 [Citation](#citation)
 
 </div>
 
@@ -135,6 +135,11 @@ cp .env.example .env
 ```
 
 **Note:** We are happy to partner with Alpha Vantage to provide robust API support for TradingAgents. You can get a free AlphaVantage API [here](https://www.alphavantage.co/support/#api-key), TradingAgents-sourced requests also have increased rate limits to 60 requests per minute with no daily limits. Typically the quota is sufficient for performing complex tasks with TradingAgents thanks to Alpha Vantage’s open-source support program. If you prefer to use OpenAI for these data sources instead, you can modify the data vendor settings in `tradingagents/default_config.py`.
+
+
+### 🔒 Private/Local Setup (No Cloud APIs)
+
+Want to run TradingAgents completely locally without sending data to cloud APIs? You can use [Ollama](https://ollama.ai/) to run LLMs on your own machine. See the **[Private Setup Guide](./docs/PRIVATE_SETUP.md)** for complete instructions.
 
 ### CLI Usage
 
